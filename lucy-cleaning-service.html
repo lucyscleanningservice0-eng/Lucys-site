@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lucy's Cleaning Service</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React and ReactDOM via CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  
+  <style>
+    /* Custom animations and utilities */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    /* Estilo para remover a seta do input type="date" no Chrome */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    /* Estilo para remover a seta do input type="time" no Chrome */
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    const e = React.createElement;
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    // --- Icon Components (Converted to React.createElement) ---
+    const MapPin = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('path', { d: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" }),
+      e('circle', { cx: "12", cy: "10", r: "3" })
+    );
+
+    const Calendar = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('rect', { x: "3", y: "4", width: "18", height: "18", rx: "2", ry: "2" }),
+      e('line', { x1: "16", y1: "2", x2: "16", y2: "6" }),
+      e('line', { x1: "8", y1: "2", x2: "8", y2: "6" }),
+      e('line', { x1: "3", y1: "10", x2: "21", y2: "10" })
+    );
+
+    const Clock = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('circle', { cx: "12", cy: "12", r: "10" }),
+      e('polyline', { points: "12 6 12 12 16 14" })
+    );
+
+    const User = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('path', { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
+      e('circle', { cx: "12", cy: "7", r: "4" })
+    );
+
+    const LogIn = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('path', { d: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" }),
+      e('polyline', { points: "10 17 15 12 10 7" }),
+      e('line', { x1: "15", y1: "12", x2: "3", y2: "12" })
+    );
+
+    const LogOut = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('path', { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" }),
+      e('polyline', { points: "16 17 21 12 16 7" }),
+      e('line', { x1: "21", y1: "12", x2: "9", y2: "12" })
+    );
+
+    const ArrowRight = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('line', { x1: "5", y1: "12", x2: "19", y2: "12" }),
+      e('polyline', { points: "12 5 19 12 12 19" })
+    );
+
+    const X = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('line', { x1: "18", y1: "6", x2: "6", y2: "18" }),
+      e('line', { x1: "6", y1: "6", x2: "18", y2: "18" })
+    );
+
+    const CheckCircle = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('path', { d: "M22 11.08V12a10 10 0 1 1-5.93-9.14" }),
+      e('polyline', { points: "22 4 12 14.01 9 11.01" })
+    );
+
+    const RefreshCw = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('polyline', { points: "23 4 23 10 17 10" }),
+      e('polyline', { points: "1 20 1 14 7 14" }),
+      e('path', { d: "M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" })
+    );
+
+    const AlertTriangle = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('path', { d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" }),
+      e('line', { x1: "12", y1: "9", x2: "12", y2: "13" }),
+      e('line', { x1: "12", y1: "17", x2: "12.01", y2: "17" })
+    );
+
+    const Globe = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className },
+      e('circle', { cx: "12", cy: "12", r: "10" }),
+      e('line', { x1: "2", y1: "12", x2: "22", y2: "12" }),
+      e('path', { d: "M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" })
+    );
+
+    const GoogleIcon = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "currentColor", className: className },
+      e('path', { d: "M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" }),
+      e('path', { d: "M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" }),
+      e('path', { d: "M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" }),
+      e('path', { d: "M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" })
+    );
+
+    const FacebookIcon = ({ size = 24, className = "" }) => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "currentColor", className: className },
+      e('path', { d: "M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v7.028C18.343 21.128 22 16.991 22 12z" })
+    );
+
+    // --- Firebase Configuration (REPLACE WITH YOUR CONFIG) ---
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    let app, db, auth;
+    try {
+      app = firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      auth = firebase.auth();
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+    }
+
+    // --- Language Translations ---
+    const i18n = {
+      en: {
+        appName: "Lucy's Cleaning Service",
+        tagline: "Sparkling homes, hassle-free scheduling.",
+        loginTitle: "Manage Your Bookings",
+        createAccount: "Create Account",
+        login: "Login",
+        logout: "Logout",
+        welcome: (name) => `Welcome, ${name}!`,
+        email: "Email",
+        password: "Password",
+        authError: "Authentication Failed. Please check your credentials.",
+        accountCreated: "Account created successfully. Please login.",
+        myBookings: "My Appointments",
+        newBooking: "Book a New Service",
+        step1Title: "Step 1: Choose Service & Time",
+        step2Title: "Step 2: Enter Address Details",
+        step3Title: "Step 3: Confirm & Book",
+        servicesTitle: "Select Your Service",
+        date: "Date",
+        time: "Time",
+        duration: "Duration",
+        price: "Price",
+        total: "Subtotal",
+        discountLabel: "New Customer Discount (10%)",
+        finalPrice: "Final Price",
+        next: "Next",
+        back: "Back",
+        bookNow: "Book Now",
+        address: "Street Address",
+        city: "City",
+        state: "State",
+        zip: "ZIP Code",
+        locationHelper: "Get My Location",
+        locationSuccess: "Location retrieved! Please confirm the address.",
+        locationFail: "Geolocation failed. Please enter the address manually.",
+        bookingSuccess: "Appointment Booked! Confirmation details below.",
+        bookingCancelConfirm: "Are you sure you want to cancel this appointment?",
+        cancel: "Cancel",
+        confirmCancel: "Confirm Cancellation",
+        bookingCancelled: "Appointment cancelled successfully.",
+        edit: "Edit",
+        noBookings: "You have no scheduled appointments.",
+        serviceDetails: (service, duration, price) => `${service} (${duration} hours, $${price.toFixed(2)})`,
+        discountMessage: "You qualify for a 10% New Customer Discount!",
+        noDiscountMessage: "Welcome back! Discount applies to first-time bookings.",
+        discountApplied: "Discount Applied",
+        aboutTitle: "Honest & Efficient Work",
+        aboutText: "Our mission at Lucys Cleaning Services is simple: to provide high-quality services for our valued clients. Our team goes above and beyond to cater to each project's specific needs. Through open communication and exceptional service, we hope you'll find what you're looking for with our Cleaning Service.",
+        bookNowCta: "Book Now",
+        loginWithGoogle: "Continue with Google",
+        loginWithFacebook: "Continue with Facebook",
+        orSeparator: "Or continue with email",
+        serviceTypes: {
+          moveOut: { name: "Move-out Cleaning", description: "Full cleaning for vacant properties." },
+          deep: { name: "Deep Cleaning", description: "Comprehensive scrub down." },
+          packUnpack: { name: "Packing & Unpacking", description: "Assistance with moving logistics." },
+          light: { name: "Light Cleaning", description: "Regular maintenance cleaning." },
+          hoarding: { name: "Hoarding Cleanup", description: "Specialized, sensitive cleaning." }
+        },
+        hours: "hrs"
+      },
+      es: {
+        appName: "Lucy's Servicio de Limpieza",
+        tagline: "Hogares relucientes, agenda sin complicaciones.",
+        loginTitle: "Administra tus Reservas",
+        createAccount: "Crear Cuenta",
+        login: "Iniciar Sesión",
+        logout: "Cerrar Sesión",
+        welcome: (name) => `¡Bienvenido(a), ${name}!`,
+        email: "Correo Electrónico",
+        password: "Contraseña",
+        authError: "Fallo de autenticación. Por favor, revisa tus credenciales.",
+        accountCreated: "Cuenta creada exitosamente. Por favor, inicia sesión.",
+        myBookings: "Mis Citas",
+        newBooking: "Reservar un Nuevo Servicio",
+        step1Title: "Paso 1: Elige Servicio y Hora",
+        step2Title: "Paso 2: Introduce Detalles de la Dirección",
+        step3Title: "Paso 3: Confirma y Reserva",
+        servicesTitle: "Selecciona tu Servicio",
+        date: "Fecha",
+        time: "Hora",
+        duration: "Duración",
+        price: "Precio",
+        total: "Subtotal",
+        discountLabel: "Descuento Nuevo Cliente (10%)",
+        finalPrice: "Precio Final",
+        next: "Siguiente",
+        back: "Atrás",
+        bookNow: "Reservar Ahora",
+        address: "Dirección de la Calle",
+        city: "Ciudad",
+        state: "Estado",
+        zip: "Código Postal",
+        locationHelper: "Obtener Mi Ubicación",
+        locationSuccess: "¡Ubicación recuperada! Por favor, confirma la dirección.",
+        locationFail: "La geolocalización falló. Por favor, introduce la dirección manualmente.",
+        bookingSuccess: "¡Cita Reservada! Detalles de confirmación abajo.",
+        bookingCancelConfirm: "¿Estás seguro(a) de que quieres cancelar esta cita?",
+        cancel: "Cancelar",
+        confirmCancel: "Confirmar Cancelación",
+        bookingCancelled: "Cita cancelada exitosamente.",
+        edit: "Editar",
+        noBookings: "No tienes citas programadas.",
+        serviceDetails: (service, duration, price) => `${service} (${duration} horas, $${price.toFixed(2)})`,
+        discountMessage: "¡Calificas para un Descuento del 10% para Nuevos Clientes!",
+        noDiscountMessage: "¡Bienvenido de nuevo! El descuento se aplica a la primera reserva.",
+        discountApplied: "Descuento Aplicado",
+        aboutTitle: "Trabajo Honesto y Eficiente",
+        aboutText: "Nuestra misión en Lucys Cleaning Services es simple: proporcionar servicios de alta calidad para nuestros valiosos clientes. Nuestro equipo va más allá para satisfacer las necesidades específicas de cada proyecto. A través de una comunicación abierta y un servicio excepcional, esperamos que encuentre lo que busca con nuestro Servicio de Limpieza. Para más información o consultas generales, póngase en contacto hoy.",
+        bookNowCta: "Reserve Ahora",
+        loginWithGoogle: "Continuar con Google",
+        loginWithFacebook: "Continuar con Facebook",
+        orSeparator: "O continuar con correo electrónico",
+        serviceTypes: {
+          moveOut: { name: "Limpieza de Mudanza", description: "Limpieza completa para propiedades vacantes." },
+          deep: { name: "Limpieza Profunda", description: "Fregado completo." },
+          packUnpack: { name: "Empaque y Desempaque", description: "Asistencia con la logística de mudanza." },
+          light: { name: "Limpieza Ligera", description: "Limpieza de mantenimiento regular." },
+          hoarding: { name: "Limpieza de Acumulación", description: "Limpieza especializada y sensible." }
+        },
+        hours: "hrs"
+      },
+      pt: {
+        appName: "Lucy's Serviço de Limpeza",
+        tagline: "Casas impecáveis, agendamento sem complicações.",
+        loginTitle: "Gerencie Seus Agendamentos",
+        createAccount: "Criar Conta",
+        login: "Entrar",
+        logout: "Sair",
+        welcome: (name) => `Bem-vindo(a), ${name}!`,
+        email: "E-mail",
+        password: "Senha",
+        authError: "Falha na autenticação. Por favor, verifique suas credenciais.",
+        accountCreated: "Conta criada com sucesso. Por favor, faça login.",
+        myBookings: "Meus Agendamentos",
+        newBooking: "Agendar um Novo Serviço",
+        step1Title: "Passo 1: Escolha Serviço e Horário",
+        step2Title: "Passo 2: Insira Detalhes do Endereço",
+        step3Title: "Passo 3: Confirme e Agende",
+        servicesTitle: "Selecione Seu Serviço",
+        date: "Data",
+        time: "Hora",
+        duration: "Duração",
+        price: "Preço",
+        total: "Subtotal",
+        discountLabel: "Desconto Novo Cliente (10%)",
+        finalPrice: "Preço Final",
+        next: "Próximo",
+        back: "Voltar",
+        bookNow: "Agendar Agora",
+        address: "Endereço da Rua",
+        city: "Cidade",
+        state: "Estado",
+        zip: "CEP",
+        locationHelper: "Obter Minha Localização",
+        locationSuccess: "Localização recuperada! Por favor, confirme o endereço.",
+        locationFail: "A geolocalização falhou. Por favor, insira o endereço manualmente.",
+        bookingSuccess: "Agendamento Realizado! Detalhes da confirmação abaixo.",
+        bookingCancelConfirm: "Tem certeza de que deseja cancelar este agendamento?",
+        cancel: "Cancelar",
+        confirmCancel: "Confirmar Cancelamento",
+        bookingCancelled: "Agendamento cancelado com sucesso.",
+        edit: "Editar",
+        noBookings: "Você não tem agendamentos programados.",
+        serviceDetails: (service, duration, price) => `${service} (${duration} horas, $${price.toFixed(2)})`,
+        discountMessage: "Você se qualifica para um Desconto de 10% para Novo Cliente!",
+        noDiscountMessage: "Bem-vindo de volta! O desconto se aplica à primeira reserva.",
+        discountApplied: "Desconto Aplicado",
+        aboutTitle: "Trabalho Honesto e Eficiente",
+        aboutText: "Nossa missão na Lucys Cleaning Services é simples: fornecer serviços de alta qualidade para nossos valiosos clientes. Nossa equipe vai além para atender às necessidades específicas de cada projeto. Através de comunicação aberta e serviço excepcional, esperamos que você encontre o que procura com nosso Serviço de Limpeza.",
+        bookNowCta: "Reserve Agora",
+        loginWithGoogle: "Continuar com Google",
+        loginWithFacebook: "Continuar com Facebook",
+        orSeparator: "Ou continue com e-mail",
+        serviceTypes: {
+          moveOut: { name: "Limpeza de Mudança", description: "Limpeza completa para imóveis vagos." },
+          deep: { name: "Limpeza Profunda", description: "Limpeza minuciosa e abrangente." },
+          packUnpack: { name: "Embalagem e Desembalagem", description: "Assistência com a logística de mudança." },
+          light: { name: "Limpeza Leve", description: "Limpeza de manutenção regular." },
+          hoarding: { name: "Limpeza de Acumulação", description: "Limpeza especializada e sensível." }
+        },
+        hours: "hrs"
+      }
+    };
+
+    // --- Service Definitions ---
+    const SERVICES = [
+      { id: 'moveOut', duration: 2, price: 236.00 },
+      { id: 'deep', duration: 2, price: 190.00 },
+      { id: 'packUnpack', duration: 1, price: 190.00 },
+      { id: 'light', duration: 1.5, price: 177.00 },
+      { id: 'hoarding', duration: 2, price: 177.00 },
+    ];
+
+    // --- Utility Functions ---
+    const formatLocation = (coords) => {
+      if (!coords) return '';
+      return `Lat: ${coords.latitude.toFixed(4)}, Lon: ${coords.longitude.toFixed(4)}`;
+    };
+
+    // --- Main Application Component (Converted to React.createElement) ---
+    function App() {
+      const [lang, setLang] = useState('en');
+      const T = useMemo(() => i18n[lang], [lang]);
+
+      // Auth State
+      const [user, setUser] = useState(null);
+      const [isAuthReady, setIsAuthReady] = useState(false);
+      const [isNewCustomer, setIsNewCustomer] = useState(false);
+      const [authMode, setAuthMode] = useState('login');
+      const [authCreds, setAuthCreds] = useState({ email: '', password: '' });
+      const [authError, setAuthError] = useState('');
+      const [authMessage, setAuthMessage] = useState('');
+
+      // App State
+      const [view, setView] = useState('booking');
+      const [step, setStep] = useState(1);
+      const [isLoading, setIsLoading] = useState(false);
+      const [geolocationStatus, setGeolocationStatus] = useState(null);
+      const [bookingToCancel, setBookingToCancel] = useState(null);
+      const [modalMessage, setModalMessage] = useState('');
+
+      const bookingSectionRef = useRef(null);
+
+      // Booking Data State
+      const [bookingData, setBookingData] = useState({
+        serviceId: SERVICES[0].id,
+        date: '',
+        time: '',
+        address: '',
+        city: '',
+        state: '',
+        zip: '',
+        coords: null,
+      });
+      const [userBookings, setUserBookings] = useState([]);
+
+      // Firebase Auth Listener
+      useEffect(() => {
+        if (!auth) return;
+        
+        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+          setUser(currentUser);
+          setIsAuthReady(true);
+          setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+      }, []);
+
+      // Check if user is new customer
+      useEffect(() => {
+        if (user && userBookings.length === 0) {
+          setIsNewCustomer(true);
+        } else {
+          setIsNewCustomer(false);
+        }
+      }, [user, userBookings]);
+
+      // Selected service
+      const selectedService = useMemo(() => {
+        return SERVICES.find(s => s.id === bookingData.serviceId) || SERVICES[0];
+      }, [bookingData.serviceId]);
+
+      // Calculate costs
+      const bookingCosts = useMemo(() => {
+        const subtotal = selectedService.price;
+        const isDiscountApplied = isNewCustomer;
+        const discount = isDiscountApplied ? subtotal * 0.1 : 0;
+        const finalPrice = subtotal - discount;
+        
+        return { subtotal, discount, finalPrice, isDiscountApplied };
+      }, [selectedService, isNewCustomer]);
+
+      // Scroll to booking section
+      const scrollToBooking = useCallback(() => {
+        if (bookingSectionRef.current) {
+          bookingSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+        setView('booking');
+      }, []);
+
+      // Handle geolocation
+      const handleGeolocation = useCallback(() => {
+        if (!navigator.geolocation) {
+          setGeolocationStatus('fail');
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setBookingData(prev => ({
+              ...prev,
+              coords: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              }
+            }));
+            setGeolocationStatus('success');
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            setGeolocationStatus('fail');
+          }
+        );
+      }, []);
+
+      // Handle next step
+      const handleNextStep = useCallback(() => {
+        if (step < 4) {
+          setStep(prev => prev + 1);
+        }
+      }, [step]);
+
+      // Handle back step
+      const handleBackStep = useCallback(() => {
+        if (step > 1) {
+          setStep(prev => prev - 1);
+        }
+      }, [step]);
+
+      // Handle booking submit
+      const handleBookingSubmit = useCallback(async () => {
+        if (!user) {
+          setAuthError('Please login to book a service');
+          return;
+        }
+
+        setIsLoading(true);
+        
+        try {
+          // Simulate booking creation
+          const newBooking = {
+            id: Date.now().toString(),
+            ...bookingData,
+            serviceId: selectedService.id,
+            userId: user.uid,
+            createdAt: new Date().toISOString(),
+            status: 'confirmed'
+          };
+
+          setUserBookings(prev => [newBooking, ...prev]);
+          setStep(4);
+          setModalMessage(T.bookingSuccess);
+          
+          // Reset booking data
+          setTimeout(() => {
+            setBookingData({
+              serviceId: SERVICES[0].id,
+              date: '',
+              time: '',
+              address: '',
+              city: '',
+              state: '',
+              zip: '',
+              coords: null,
+            });
+            setStep(1);
+          }, 3000);
+        } catch (error) {
+          console.error('Booking error:', error);
+          setAuthError('Failed to create booking');
+        } finally {
+          setIsLoading(false);
+        }
+      }, [user, bookingData, selectedService, T]);
+
+      // Handle auth submit
+      const handleAuthSubmit = useCallback(async (ev) => {
+        ev.preventDefault();
+        setAuthError('');
+        setAuthMessage('');
+        setIsLoading(true);
+
+        try {
+          if (authMode === 'signup') {
+            await auth.createUserWithEmailAndPassword(authCreds.email, authCreds.password);
+            setAuthMessage(T.accountCreated);
+            setAuthMode('login');
+          } else {
+            await auth.signInWithEmailAndPassword(authCreds.email, authCreds.password);
+            setView('dashboard');
+          }
+          setAuthCreds({ email: '', password: '' });
+        } catch (error) {
+          console.error('Auth error:', error);
+          setAuthError(T.authError);
+        } finally {
+          setIsLoading(false);
+        }
+      }, [authMode, authCreds, T]);
+
+      // Handle logout
+      const handleLogout = useCallback(async () => {
+        try {
+          await auth.signOut();
+          setView('booking');
+          setUserBookings([]);
+        } catch (error) {
+          console.error('Logout error:', error);
+        }
+      }, []);
+
+      // Handle cancel booking
+      const handleCancelBooking = useCallback((bookingId) => {
+        setUserBookings(prev => prev.filter(b => b.id !== bookingId));
+        setBookingToCancel(null);
+        setModalMessage(T.bookingCancelled);
+      }, [T]);
+
+      // --- Components (Converted to React.createElement) ---
+
+      const Header = () => e('header', { className: "bg-white shadow-md sticky top-0 z-40" },
+        e('div', { className: "container mx-auto px-4 py-4 flex justify-between items-center" },
+          e('h1', { className: "text-2xl font-bold text-emerald-600" }, T.appName),
+          e('div', { className: "flex items-center gap-4" },
+            e('button', {
+              onClick: () => {
+                const langs = ['en', 'pt', 'es'];
+                const nextLangIndex = (langs.indexOf(lang) + 1) % langs.length;
+                setLang(langs[nextLangIndex]);
+              },
+              className: "flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+            },
+              e(Globe, { size: 20 }),
+              e('span', { className: "text-sm font-medium uppercase" }, lang)
+            ),
+            user ? e(React.Fragment, null,
+              e('button', {
+                onClick: () => setView('dashboard'),
+                className: "flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+              },
+                e(User, { size: 20 }),
+                e('span', null, T.myBookings)
+              ),
+              e('button', {
+                onClick: handleLogout,
+                className: "flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+              },
+                e(LogOut, { size: 20 }),
+                e('span', null, T.logout)
+              )
+            ) : e('button', {
+              onClick: () => setView('login'),
+              className: "flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+            },
+              e(LogIn, { size: 20 }),
+              e('span', null, T.login)
+            )
+          )
+        )
+      );
+
+      const LandingSection = ({ user }) => e('section', { className: "container mx-auto px-4 py-16 md:py-24 text-center max-w-4xl" },
+        e('h1', { className: "text-4xl md:text-5xl font-extrabold text-gray-900 mb-6" }, T.appName),
+        e('p', { className: "text-xl text-gray-500 mb-8" }, T.tagline),
+        e('div', { className: "bg-white p-8 md:p-12 rounded-2xl shadow-xl text-left border border-gray-100" },
+          e('h2', { className: "text-3xl font-bold text-emerald-700 mb-4" }, T.aboutTitle),
+          e('p', { className: "text-gray-600 leading-relaxed whitespace-pre-line" }, T.aboutText)
+        ),
+        user && e('button', {
+          onClick: scrollToBooking,
+          className: "mt-10 px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold rounded-xl shadow-2xl shadow-emerald-500/50 transition duration-300 transform hover:scale-105"
+        }, T.bookNowCta)
+      );
+
+      const ServiceCard = ({ service, isSelected, onClick }) => {
+        const serviceT = T.serviceTypes[service.id] || {};
+        return e('div', {
+          className: `p-4 rounded-xl shadow-lg cursor-pointer transition duration-300 transform hover:scale-[1.02] ${
+            isSelected
+              ? 'bg-emerald-600 text-white shadow-emerald-700/50 ring-4 ring-emerald-300'
+              : 'bg-white text-gray-800 border border-gray-200 hover:shadow-xl'
+          }`,
+          onClick: onClick
+        },
+          e('h3', { className: "text-lg font-semibold mb-1" }, serviceT.name),
+          e('p', { className: `text-sm ${isSelected ? 'text-emerald-100' : 'text-gray-500'}` }, serviceT.description),
+          e('div', { className: "mt-3 flex justify-between items-center text-sm font-medium" },
+            e('span', { className: `flex items-center gap-1 ${isSelected ? 'text-emerald-200' : 'text-gray-600'}` },
+              e(Clock, { size: 16 }),
+              `${service.duration} ${T.hours}`
+            ),
+            e('span', { className: "text-xl font-bold" }, `$${service.price.toFixed(2)}`)
+          )
+        );
+      };
+
+      const Step1ServiceSelection = () => e(React.Fragment, null,
+        e('h2', { className: "text-2xl font-bold text-gray-700 mb-6" }, T.step1Title),
+        e('div', { className: "space-y-4 mb-8" },
+          e('h3', { className: "text-xl font-semibold text-gray-600" }, T.servicesTitle),
+          e('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+            SERVICES.map((service) => e(ServiceCard, {
+              key: service.id,
+              service: service,
+              isSelected: bookingData.serviceId === service.id,
+              onClick: () => setBookingData({ ...bookingData, serviceId: service.id })
+            }))
+          )
+        ),
+        e('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+          e('div', { className: "relative" },
+            e('label', { htmlFor: "booking-date", className: "absolute -top-2 left-2 inline-block bg-white px-1 text-xs font-medium text-gray-900" }, T.date),
+            e('div', { className: "flex items-center border border-gray-300 rounded-lg focus-within:ring-1 focus-within:ring-emerald-500 focus-within:border-emerald-500 transition" },
+              e(Calendar, { size: 20, className: "text-gray-400 mx-3" }),
+              e('input', {
+                type: "date",
+                id: "booking-date",
+                value: bookingData.date,
+                onChange: (ev) => setBookingData({ ...bookingData, date: ev.target.value }),
+                className: "p-3 w-full border-0 rounded-r-lg focus:ring-0",
+                min: new Date().toISOString().split('T')[0]
+              })
+            )
+          ),
+          e('div', { className: "relative" },
+            e('label', { htmlFor: "booking-time", className: "absolute -top-2 left-2 inline-block bg-white px-1 text-xs font-medium text-gray-900" }, T.time),
+            e('div', { className: "flex items-center border border-gray-300 rounded-lg focus-within:ring-1 focus-within:ring-emerald-500 focus-within:border-emerald-500 transition" },
+              e(Clock, { size: 20, className: "text-gray-400 mx-3" }),
+              e('input', {
+                type: "time",
+                id: "booking-time",
+                value: bookingData.time,
+                onChange: (ev) => setBookingData({ ...bookingData, time: ev.target.value }),
+                className: "p-3 w-full border-0 rounded-r-lg focus:ring-0"
+              })
+            )
+          )
+        ),
+        e('div', { className: "mt-8 flex justify-end" },
+          e('button', {
+            onClick: handleNextStep,
+            disabled: !bookingData.date || !bookingData.time || !bookingData.serviceId,
+            className: "flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-500/50 transition duration-300 disabled:opacity-50"
+          },
+            T.next,
+            e(ArrowRight, { size: 20, className: "ml-2" })
+          )
+        )
+      );
+
+      const Step2Address = () => e(React.Fragment, null,
+        e('h2', { className: "text-2xl font-bold text-gray-700 mb-6" }, T.step2Title),
+        e('div', { className: "space-y-4" },
+          e('div', { className: "relative" },
+            e('input', {
+              type: "text",
+              placeholder: T.address,
+              value: bookingData.address,
+              onChange: (ev) => setBookingData({ ...bookingData, address: ev.target.value }),
+              className: "w-full p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition"
+            }),
+            e('button', {
+              onClick: handleGeolocation,
+              className: "absolute right-1 top-1/2 -translate-y-1/2 p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition",
+              title: T.locationHelper
+            },
+              e(MapPin, { size: 20 })
+            )
+          ),
+          geolocationStatus === 'success' && e('p', { className: "text-sm text-green-600 flex items-center gap-1" },
+            e(CheckCircle, { size: 16 }),
+            `${T.locationSuccess} (${formatLocation(bookingData.coords)})`
+          ),
+          geolocationStatus === 'fail' && e('p', { className: "text-sm text-red-600 flex items-center gap-1" },
+            e(AlertTriangle, { size: 16 }),
+            T.locationFail
+          ),
+          e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
+            e('input', {
+              type: "text",
+              placeholder: T.city,
+              value: bookingData.city,
+              onChange: (ev) => setBookingData({ ...bookingData, city: ev.target.value }),
+              className: "p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition"
+            }),
+            e('input', {
+              type: "text",
+              placeholder: T.state,
+              value: bookingData.state,
+              onChange: (ev) => setBookingData({ ...bookingData, state: ev.target.value }),
+              className: "p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition"
+            }),
+            e('input', {
+              type: "text",
+              placeholder: T.zip,
+              value: bookingData.zip,
+              onChange: (ev) => setBookingData({ ...bookingData, zip: ev.target.value }),
+              className: "p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition"
+            })
+          )
+        ),
+        e('div', { className: "mt-8 flex justify-between" },
+          e('button', {
+            onClick: handleBackStep,
+            className: "flex items-center bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300"
+          },
+            '← ', T.back
+          ),
+          e('button', {
+            onClick: handleNextStep,
+            disabled: !bookingData.address || !bookingData.city || !bookingData.state || !bookingData.zip,
+            className: "flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-500/50 transition duration-300 disabled:opacity-50"
+          },
+            T.next,
+            e(ArrowRight, { size: 20, className: "ml-2" })
+          )
+        )
+      );
+
+      const Step3Confirmation = () => e(React.Fragment, null,
+        e('h2', { className: "text-2xl font-bold text-gray-700 mb-6" }, T.step3Title),
+        e('div', { className: "space-y-4 p-4 bg-white rounded-xl shadow-lg border border-gray-100" },
+          e('h3', { className: "text-xl font-semibold text-emerald-600 border-b pb-2 mb-3" }, "Service Summary"),
+          e('p', null,
+            e('span', { className: "font-medium" }, T.servicesTitle, ":"),
+            ` ${T.serviceTypes[selectedService.id].name}`
+          ),
+          e('p', null,
+            e('span', { className: "font-medium" }, T.duration, ":"),
+            ` ${selectedService.duration} ${T.hours}`
+          ),
+          e('p', { className: "flex items-center gap-2" },
+            e(Calendar, { size: 16 }),
+            e('span', { className: "font-medium" }, T.date, ":"),
+            ` ${bookingData.date}`
+          ),
+          e('p', { className: "flex items-center gap-2" },
+            e(Clock, { size: 16 }),
+            e('span', { className: "font-medium" }, T.time, ":"),
+            ` ${bookingData.time}`
+          ),
+          e('p', { className: "flex items-center gap-2" },
+            e(MapPin, { size: 16 }),
+            e('span', { className: "font-medium" }, T.address, ":"),
+            ` ${bookingData.address}, ${bookingData.city}, ${bookingData.state} ${bookingData.zip}`
+          ),
+          e('div', { className: "pt-4 border-t mt-4 space-y-2" },
+            e('div', { className: "flex justify-between font-normal text-gray-700" },
+              e('span', null, T.total, ":"),
+              e('span', null, `$${bookingCosts.subtotal.toFixed(2)}`)
+            ),
+            e('div', { className: `flex justify-between font-semibold ${bookingCosts.isDiscountApplied ? 'text-green-600' : 'text-gray-500'}` },
+              e('span', null, T.discountLabel, ":"),
+              e('span', null, `- $${bookingCosts.discount.toFixed(2)}`)
+            ),
+            bookingCosts.isDiscountApplied ? e('p', { className: "text-sm text-green-600 italic flex items-center gap-1" },
+              e(CheckCircle, { size: 14 }),
+              T.discountMessage
+            ) : e('p', { className: "text-sm text-gray-500 italic flex items-center gap-1" },
+              e(AlertTriangle, { size: 14 }),
+              T.noDiscountMessage
+            ),
+            e('div', { className: "flex justify-between font-bold text-2xl pt-2 border-t border-dashed border-gray-300" },
+              e('span', null, T.finalPrice, ":"),
+              e('span', { className: "text-emerald-600" }, `$${bookingCosts.finalPrice.toFixed(2)}`)
+            )
+          )
+        ),
+        e('div', { className: "mt-8 flex justify-between" },
+          e('button', {
+            onClick: handleBackStep,
+            className: "flex items-center bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300"
+          },
+            '← ', T.back
+          ),
+          e('button', {
+            onClick: handleBookingSubmit,
+            disabled: isLoading,
+            className: "flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl shadow-2xl shadow-emerald-500/50 transition duration-300 disabled:opacity-50"
+          },
+            isLoading ? e(RefreshCw, { size: 20, className: "animate-spin mr-2" }) : e(CheckCircle, { size: 20, className: "mr-2" }),
+            T.bookNow
+          )
+        )
+      );
+
+      const Step4Success = () => {
+        const lastBooking = userBookings[0];
+        if (!lastBooking) return e('p', { className: "text-center text-gray-500" }, T.bookingSuccess);
+
+        return e('div', { className: "text-center" },
+          e(CheckCircle, { size: 64, className: "text-emerald-600 mx-auto mb-4" }),
+          e('h2', { className: "text-3xl font-bold text-emerald-700 mb-2" }, T.bookingSuccess),
+          e('p', { className: "text-gray-600 mb-8" }, "We can't wait to make your home sparkle!"),
+          e('div', { className: "max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-100 text-left" },
+            e('p', { className: "font-semibold text-lg border-b pb-2 mb-2" }, T.myBookings, " ID: ", lastBooking.id.substring(0, 8), "..."),
+            e('p', null, e('span', { className: "font-medium" }, T.servicesTitle, ":"), ` ${T.serviceTypes[lastBooking.serviceId].name}`),
+            e('p', null, e('span', { className: "font-medium" }, T.date, ":"), ` ${lastBooking.date} at ${lastBooking.time}`),
+            e('p', null, e('span', { className: "font-medium" }, T.address, ":"), ` ${lastBooking.address}, ${lastBooking.city}`)
+          ),
+          e('button', {
+            onClick: () => setView('dashboard'),
+            className: "mt-8 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition"
+          }, T.myBookings)
+        );
+      };
+
+      const BookingFlowContainer = () => {
+        switch (step) {
+          case 1: return e(Step1ServiceSelection, null);
+          case 2: return e(Step2Address, null);
+          case 3: return e(Step3Confirmation, null);
+          case 4: return e(Step4Success, null);
+          default: return e(Step1ServiceSelection, null);
+        }
+      };
+
+      const AuthView = () => e('div', { className: "max-w-md mx-auto bg-white p-8 rounded-2xl shadow-2xl border border-gray-100" },
+        e('h2', { className: "text-3xl font-bold text-gray-800 mb-6 text-center" },
+          authMode === 'login' ? T.login : T.createAccount
+        ),
+        authError && e('div', { className: "mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" }, authError),
+        authMessage && e('div', { className: "mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg" }, authMessage),
+        e('form', { onSubmit: handleAuthSubmit, className: "space-y-4" },
+          e('input', {
+            type: "email",
+            placeholder: T.email,
+            value: authCreds.email,
+            onChange: (ev) => setAuthCreds({ ...authCreds, email: ev.target.value }),
+            className: "w-full p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500",
+            required: true
+          }),
+          e('input', {
+            type: "password",
+            placeholder: T.password,
+            value: authCreds.password,
+            onChange: (ev) => setAuthCreds({ ...authCreds, password: ev.target.value }),
+            className: "w-full p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500",
+            required: true
+          }),
+          e('button', {
+            type: "submit",
+            disabled: isLoading,
+            className: "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50"
+          },
+            isLoading ? 'Loading...' : (authMode === 'login' ? T.login : T.createAccount)
+          )
+        ),
+        e('div', { className: "relative my-6" },
+          e('div', { className: "absolute inset-0 flex items-center", 'aria-hidden': "true" },
+            e('div', { className: "w-full border-t border-gray-300" })
+          ),
+          e('div', { className: "relative flex justify-center text-sm" },
+            e('span', { className: "px-2 bg-white text-gray-500" }, T.orSeparator)
+          )
+        ),
+        e('div', { className: "space-y-3" },
+          e('button', {
+            type: "button",
+            onClick: () => alert('Google Login not implemented yet. Please use email/password.'),
+            className: "w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          },
+            e(GoogleIcon, { size: 20 }),
+            e('span', { className: "text-sm font-medium text-gray-700" }, T.loginWithGoogle)
+          ),
+          e('button', {
+            type: "button",
+            onClick: () => alert('Facebook Login not implemented yet. Please use email/password.'),
+            className: "w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          },
+            e(FacebookIcon, { size: 20, className: "text-[#1877F2]" }),
+            e('span', { className: "text-sm font-medium text-gray-700" }, T.loginWithFacebook)
+          )
+        ),
+        e('div', { className: "mt-6 text-center" },
+          e('button', {
+            onClick: () => {
+              setAuthMode(authMode === 'login' ? 'signup' : 'login');
+              setAuthError('');
+              setAuthMessage('');
+            },
+            className: "text-emerald-600 hover:text-emerald-700 font-medium"
+          },
+            authMode === 'login' ? T.createAccount : T.login
+          )
+        )
+      );
+
+      const MyBookingsView = () => e('div', { className: "space-y-6" },
+        e('div', { className: "flex justify-between items-center" },
+          e('h2', { className: "text-3xl font-bold text-gray-800" }, T.myBookings),
+          e('button', {
+            onClick: () => setView('booking'),
+            className: "px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition"
+          }, T.newBooking)
+        ),
+        userBookings.length === 0 ? e('div', { className: "text-center py-12 bg-white rounded-xl shadow-lg" },
+          e('p', { className: "text-gray-500 text-lg" }, T.noBookings),
+          e('button', {
+            onClick: () => setView('booking'),
+            className: "mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition"
+          }, T.newBooking)
+        ) : e('div', { className: "space-y-4" },
+          userBookings.map((booking) => e('div', { key: booking.id, className: "bg-white p-6 rounded-xl shadow-lg border border-gray-100" },
+            e('div', { className: "flex justify-between items-start" },
+              e('div', { className: "flex-1" },
+                e('h3', { className: "text-xl font-semibold text-emerald-600 mb-2" }, T.serviceTypes[booking.serviceId].name),
+                e('p', { className: "text-gray-600 flex items-center gap-2 mb-1" },
+                  e(Calendar, { size: 16 }),
+                  `${booking.date} at ${booking.time}`
+                ),
+                e('p', { className: "text-gray-600 flex items-center gap-2" },
+                  e(MapPin, { size: 16 }),
+                  `${booking.address}, ${booking.city}, ${booking.state}`
+                )
+              ),
+              e('button', {
+                onClick: () => setBookingToCancel(booking.id),
+                className: "px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
+              }, T.cancel)
+            )
+          ))
+        )
+      );
+
+      if (isLoading) {
+        return e('div', { className: "h-screen w-full flex items-center justify-center bg-gray-50" },
+          e(RefreshCw, { size: 32, className: "text-emerald-600 animate-spin" }),
+          e('p', { className: "ml-3 text-lg text-gray-600" }, "Loading...")
+        );
+      }
+
+      return e('div', { className: "min-h-screen bg-gray-50 font-sans" },
+        bookingToCancel && e('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" },
+          e('div', { className: "bg-white p-8 rounded-2xl shadow-2xl max-w-md" },
+            e('h3', { className: "text-2xl font-bold text-gray-800 mb-4" }, T.confirmCancel),
+            e('p', { className: "text-gray-600 mb-6" }, T.bookingCancelConfirm),
+            e('div', { className: "flex gap-4" },
+              e('button', {
+                onClick: () => setBookingToCancel(null),
+                className: "flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold rounded-lg transition"
+              }, T.back),
+              e('button', {
+                onClick: () => handleCancelBooking(bookingToCancel),
+                className: "flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition"
+              }, T.confirmCancel)
+            )
+          )
+        ),
+        modalMessage && e('div', { className: "fixed top-20 left-1/2 -translate-x-1/2 z-50" },
+          e('div', { className: "p-4 rounded-xl shadow-lg flex items-center gap-3 bg-green-600 text-white" },
+            e(CheckCircle, { size: 20 }),
+            e('span', { className: "font-medium" }, modalMessage),
+            e('button', { onClick: () => setModalMessage(''), className: "ml-4" }, e(X, { size: 20 }))
+          )
+        ),
+        e(Header, null),
+        e(LandingSection, { user: user }),
+        e('main', { ref: bookingSectionRef, id: "booking-section", className: "container mx-auto p-4 py-8 max-w-4xl" },
+          !user && view !== 'login' && e('div', { className: "text-center mb-8 p-6 bg-emerald-50 rounded-xl border border-emerald-200" },
+            e('p', { className: "text-lg text-emerald-800 font-medium" }, "Please log in or create an account to manage your bookings!"),
+            e('button', {
+              onClick: () => setView('login'),
+              className: "mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-xl transition shadow-md"
+            }, T.loginTitle)
+          ),
+          view === 'login' && e(AuthView, null),
+          view === 'dashboard' && user && e(MyBookingsView, null),
+          view === 'booking' && e('div', { className: "bg-white p-6 md:p-10 rounded-2xl shadow-2xl border border-gray-100" },
+            e(BookingFlowContainer, null)
+          )
+        )
+      );
+    }
+
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(e(App, null));
+  </script>
+</body>
+</html>
